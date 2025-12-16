@@ -38,11 +38,12 @@ resource "aws_subnet" "private_subnet" {
 
 
 
-
+//private subnet
 
 
 resource "aws_eip" "eip" {
 	domain = "vpc"
+	
   
 }
 
