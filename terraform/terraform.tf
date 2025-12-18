@@ -88,8 +88,97 @@ resource "aws_route_table_association" "private_rout_table_association" {
 }
 
 
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+resource "aws_security_group" "public_k8s_security_group" {
+	vpc_id =aws_vpc.k8s_cluster.id
+	name = "public_k8s_ec2_sg"
+
+
+	ingress {
+		from_port = 22
+		to_port = 22
+		protocol = "tcp"
+		cidr_blocks = [ "0.0.0.0/0" ]
+	}
+
+	egress {
+		from_port = 0
+		to_port = 0
+		protocol = "-1"
+		cidr_blocks = [ "0.0.0.0/0" ]
+	}
+
+tags = {
+  Name="public_k8s_sg"
+}
+
+
+
+}
+
+
+
+
+
+
+resource "aws_security_group" "private_k8s_security_group" {
+	vpc_id =aws_vpc.k8s_cluster.id
+	name = "private_k8s_ec2_sg"
+
+
+	ingress {
+		from_port = 22
+		to_port = 22
+		protocol = "tcp"
+		cidr_blocks = [ "10.0.2.0/24" ]
+	}
+
+	egress {
+		from_port = 0
+		to_port = 0
+		protocol = "-1"
+		cidr_blocks = [ "0.0.0.0/0" ]
+	}
+
+tags = {
+  Name="private_k8s_sg"
+}
+
+
+
+}
+
   
 
+resource "aws_key_pair" "k8s_key" {
+  key_name   = "k8s-cluster-key"
+  public_key = file("~/.ssh/id_rsa.pub")
+}
+
+
+
+
+resource "aws_instance" "jumpbox" {
+	ami = "ami-0fa91bc90632c73c9"
+	instance_type = "t3.small"
+	subnet_id = aws_subnet.public_subnet.id
+	vpc_security_group_ids = [aws_security_group.public_k8s_security_group]
+	key_name = aws_key_pair.k8s_key.key_name
+	associate_public_ip_address = true
+
+	tags = {
+	 Name = "jumpbox"
+	}
+  
+}
 
 
 
@@ -150,3 +239,44 @@ resource "aws_route_table_association" "connect_k8s_subnet_with_route_table" {
 }
 
 ///////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+resource "aws_instance" "jumpbox" {
+	ami = "ami-0fa91bc90632c73c9"
+	instance_type = "t3.small"
+	subnet_id = aws_subnet.public_subnet.id
+	vpc_security_group_ids = [aws_security_group.public_k8s_security_group]
+	key_name = aws_key_pair.k8s_key.key_name
+	associate_public_ip_address = true
+
+	tags = {
+	 Name = "jumpbox"
+	}
+  
+}
+
+
+
+
+
+resource "aws_instance" "master" {
+	ami = "ami-0fa91bc90632c73c9"
+	instance_type = "t3.small"
+	subnet_id = aws_subnet.private_subnet.id
+	vpc_security_group_ids = [aws_security_group.public_k8s_security_group]
+	key_name = aws_key_pair.k8s_key.key_name
+	associate_public_ip_address = true
+
+	tags = {
+	 Name = "jumpbox"
+	}
+  
+}
